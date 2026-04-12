@@ -11,9 +11,12 @@
 //metodo estativo de activacion de la app
 //
 using namespace std;
-
+vector<Token> listaTokens;
 Nodo* arbol=nullptr;
-
+void parsear(){
+   Parser parser (listaTokens);
+   arbol = parser.parsearPrograma(); 
+}
 void imprimirArbol(Nodo* nodo, int nivel = 0) {
 ast_viewer_mostrar(arbol);
 }
@@ -67,14 +70,14 @@ void IDC_BTN_ANALIZAR(GtkWidget *btn,gpointer data){
             "keywords.csv"
             );
 
-   vector<Token> listaTokens = miAnalizador.generarListaTokens();
+   listaTokens = miAnalizador.generarListaTokens();
    listaTokens.push_back({FIN, "EOF",0,0});
 for (const auto& t : listaTokens) {
     cout << "tipo=" << t.tipo << " lexema=" << t.lexema << endl;
 }
-   Parser parser (listaTokens);
-    arbol = parser.parsearPrograma(); 
-    // ast_viewer_mostrar(arbol);
+   // Parser parser (listaTokens);
+   //  arbol = parser.parsearPrograma(); 
+   //  // ast_viewer_mostrar(arbol);
 
      std::stringstream salida;
      for (const auto& token : listaTokens) {
@@ -116,6 +119,8 @@ static void activate (GtkApplication* app, gpointer user_data){
   //ventana de scroll para el "Edit text"
   GtkWidget*btnCompilar = gtk_button_new_with_label("Ejecutar Analizador");
   GtkWidget*btnMostrarAST = gtk_button_new_with_label("Mostrar AST");
+  GtkWidget*btnGenerarArbol = gtk_button_new_with_label("Generar Arbol");
+
 
   GtkWidget *scrollCode = gtk_scrolled_window_new(NULL,NULL);
   
@@ -148,6 +153,7 @@ gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(scrollCode),1100);
   // gtk_entry_set_max_length(GTK_ENTRY(EntryCodigo),50);//max length pues xD
   //poner dentro de la box: box el componente btnCompilar y el btnMostrarAST
   //
+  gtk_box_pack_start(GTK_BOX(box_btns),btnGenerarArbol,FALSE,TRUE,0);
   gtk_box_pack_start(GTK_BOX(box_btns),btnMostrarAST,FALSE,TRUE,0);
   gtk_box_pack_start(GTK_BOX(box_btns),btnCompilar,FALSE,TRUE,0);
  //aqui se muestran todos los los cosos dentro de box (box ya se muestra como box principal ya que es la unica que agrego a window)
@@ -158,8 +164,9 @@ gtk_box_pack_start(GTK_BOX(box),box_btns,TRUE,FALSE,0);
   gtk_box_pack_start(GTK_BOX(box),lbloutput,FALSE,FALSE,0);
   gtk_box_pack_start(GTK_BOX(box),scrollOutput,TRUE,TRUE,0);
   //signals- lo que el boton o cosa que tenga accionador, va a hacer .D
+  
   g_signal_connect(btnMostrarAST, "clicked",G_CALLBACK(imprimirArbol),NULL);
-    
+  g_signal_connect(btnGenerarArbol, "clicked",G_CALLBACK(parsear),NULL);
   g_signal_connect(btnCompilar, "clicked",G_CALLBACK(IDC_BTN_ANALIZAR),widgets);
 //inicializacion de window
   gtk_widget_show_all(window);
