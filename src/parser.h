@@ -21,7 +21,12 @@ class Parser {
     Parser(vector<Token> toks);
     Nodo* ParseAsignacion();
     Nodo* parsearPrograma();
-  private:
+  private :
+    Nodo* parsearSi();
+    Nodo* parsearMientras();
+    Nodo* parsearCondicion();
+    Nodo* parsearBloque();
+    Nodo* llamadaFuncion();
     Nodo* parsearSentencia();
     Nodo* parsearAsignacion();
     Nodo* parsearExpresion();

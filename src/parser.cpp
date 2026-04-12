@@ -37,7 +37,10 @@ Nodo* Parser::parsearSentencia() {
 }
 
 Nodo* Parser::parsearAsignacion() {
-    
+   if(Actual().tipo == ENTERO || Actual().tipo == DECIMAL){
+     cout<<"error: sintaxis invalida no se permite una constante como inicio de sentencia"<<endl;
+     return nullptr;
+   } 
     Token id = nextToken();
     //x=2-2
     //x++
@@ -95,3 +98,11 @@ Nodo* Parser::parsearExpresion() {
 
     return izq;
 }
+
+    // Nodo* Parser::parsearSi(){
+    //   Actual().tipo == 
+    // }
+    // Nodo* parsearMientras();
+    // Nodo* parsearCondicion();
+    // Nodo* parsearBloque();
+    // Nodo* llamadaFuncion();
