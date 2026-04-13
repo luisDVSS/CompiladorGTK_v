@@ -12,10 +12,19 @@
 //
 using namespace std;
 vector<Token> listaTokens;
+vector<string> errores;
 Nodo* arbol=nullptr;
-void parsear(){
+void parsear(GtkWidget*,gpointer data){
+  vector<string>* errores = (vector<string>*)data;
+  errores->clear();
    Parser parser (listaTokens);
    arbol = parser.parsearPrograma(); 
+   *errores=parser.errores;
+   if(!errores->empty()){
+     for(string e:*errores){
+       cout << e<<endl;
+     }
+   }
 }
 void imprimirArbol(Nodo* nodo, int nivel = 0) {
 ast_viewer_mostrar(arbol);
@@ -166,7 +175,7 @@ gtk_box_pack_start(GTK_BOX(box),box_btns,TRUE,FALSE,0);
   //signals- lo que el boton o cosa que tenga accionador, va a hacer .D
   
   g_signal_connect(btnMostrarAST, "clicked",G_CALLBACK(imprimirArbol),NULL);
-  g_signal_connect(btnGenerarArbol, "clicked",G_CALLBACK(parsear),NULL);
+  g_signal_connect(btnGenerarArbol, "clicked",G_CALLBACK(parsear),&errores);
   g_signal_connect(btnCompilar, "clicked",G_CALLBACK(IDC_BTN_ANALIZAR),widgets);
 //inicializacion de window
   gtk_widget_show_all(window);
@@ -176,7 +185,7 @@ int main(int argc, char* argv[]){
   GtkApplication *app;
   int status;
   app = gtk_application_new("org.compiler.app",G_APPLICATION_DEFAULT_FLAGS);
-  gtk_application_window_new(app);
+  // gtk_application_window_new(app);
   g_signal_connect(app,"activate",G_CALLBACK(activate), NULL);
   status = g_application_run (G_APPLICATION(app),argc,argv);
   g_object_unref(app);
