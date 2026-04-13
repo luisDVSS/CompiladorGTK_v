@@ -40,6 +40,7 @@ case ID:
 case KW_CLASE:
   break;
 case KW_MIENTRAS: 
+  return parsearMientras();
   break;
 case FUNCION_PROPIA:
   break;
@@ -52,9 +53,11 @@ case KW_ENTERO:
   break;
 case KW_DOBLE:
   break;
-case KW_CADENA_TIPO: 
-default:
-    errores.push_back("Error: inicio de sentencia invalido en linea: "+to_string(Actual().linea));
+// case KW_CADENA_TIPO: 
+  // parsearCadenaTipo();
+default: //se ejecuta solo si al parsearla sentencia 
+    cout<<"debug 1"<<endl;
+    errores.push_back("Error: Inicio de sentencia invalido en linea: "+to_string(Actual().linea));
     int lineaE = Actual().linea;
           //si encuentra un error en la linea x, avanza al token de la linea diferente a esa
     while(Actual().tipo!=FIN && Actual().linea==lineaE && Actual().tipo != LLAVE_CIERRA){
@@ -83,14 +86,23 @@ Nodo* Parser::parsearAsignacion() {
     
     nextToken();
     //->2
-
-    Nodo* expresion = parsearExpresion();
+    Nodo* der = nullptr;
+    //puntero llamado der sin apuntar a ningun lado
+    // cout<<"lexema: "<<Actual().tipo<<endl;
+    if(Actual().tipo == CADENA){
+      Nodo* temp = new Nodo("CADENA",Actual().lexema);
+      // cout<<"Es cadena"<<endl;
+    nextToken();
+    der = temp;
+    }else{
+    der = parsearExpresion();
+    }
     //crea un puntero llamdo expresion 
     //--->0x91283 = retorna = nodo
 
     return new Nodo("ASIGNACION", "=",
         new Nodo("ID", id.lexema),
-        expresion
+       der 
     );
 }
 
@@ -155,7 +167,7 @@ Nodo* Parser::parsearExpresion() {
         Nodo* der = parsearExpresion();
         //x=2+10 :  +
         //der = 
-        return new Nodo(operador.lexema, "", izq, der);
+        return new Nodo("CONDICION",operador.lexema,izq, der);
     }//else{}
       //x<2
       //  ^ 
@@ -205,14 +217,41 @@ Nodo* Parser::parsearExpresion() {
       // cout<<"si cierra bien"<<endl;
       nextToken();
       Nodo* der = parsearBloque();
-      if (der == nullptr){
+      if (der == nullptr){ 
         cout<<"dio null"<<endl;
         return nullptr;
       }
 
         return new Nodo("SENT_CONDICION", "", izq, der);
     }
-    // Nodo* parsearMientras();
+//ejemplo input
+//x=0
+//mientras(x<10){
+//x=x+1
+//}
+    Nodo* Parser::parsearMientras(){
+      //entra en mientras 
+      if(Actual().tipo!=KW_MIENTRAS){
+        errores.push_back("Error: inicio de sentencia invalido, en linea: "+to_string(Actual().linea));
+        return nullptr;
+      }
+      nextToken();
+      if(Actual().tipo != PAREN_ABRE){
+        errores.push_back("Error: se esperaba un '(' en linea: "+to_string(Actual().tipo));
+        return nullptr;
+      }
+      Nodo* izq = parsearCondicion();
+      //validacion si hay )
+      if(Actual().tipo != PAREN_CIERRA){
+        errores.push_back("Error: se esperaba un ')' en linea: "+ to_string(Actual().tipo));
+        return nullptr;
+      }
+      nextToken();
+      Nodo* der = parsearBloque();
+      return new Nodo("SENT_MIENTRAS","",izq,der);
+    }
+      // Nodo* Parser::parsear
+    // Token* parsearCadena duda si esto se parsea
     // Nodo* parsearCondicion();
     // Nodo* parsearBloque();
     // Nodo* llamadaFuncion();
