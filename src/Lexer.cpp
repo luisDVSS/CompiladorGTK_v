@@ -11,7 +11,7 @@ Lexer::Lexer(std::string fuente,
     std::string rutaChars,
     std::string rutaKeywords)
     : codigo(fuente), pos(0), lineaActual(1), colActual(1),
-    colAlpha(0), colDigito(1), colEspacio(22) // Valores por defecto
+    colAlpha(-1), colDigito(-1), colEspacio(-1), colSaltoLinea(-1), colOtros(-1)
 {
     cargarNombresTokens(rutaNombres);
     cargarMatriz(rutaMatriz);
@@ -83,10 +83,12 @@ void Lexer::cargarCharColumnas(const std::string& ruta) {
         std::getline(ss, sChar, ',');
         std::getline(ss, sCol, ',');
         if (!sChar.empty()) {
-            // Guardamos las etiquetas dinamicas
+            // Guardamos las etiquetas dinámicas leyendo el CSV
             if (sChar == "[ALPHA]") colAlpha = std::stoi(sCol);
             else if (sChar == "[DIGITO]") colDigito = std::stoi(sCol);
             else if (sChar == "[ESPACIO]") colEspacio = std::stoi(sCol);
+            else if (sChar == "[SALTO_LINEA]") colSaltoLinea = std::stoi(sCol);
+            else if (sChar == "[OTROS]") colOtros = std::stoi(sCol);           
             else charAColumna[sChar] = std::stoi(sCol);
         }
     }
@@ -112,13 +114,19 @@ void Lexer::cargarKeywords(const std::string& ruta) {
 int Lexer::obtenerColumna(char c) {
     if (isalpha(c) || c == '_') return colAlpha;
     if (isdigit(c))             return colDigito;
+
+    // ESTO TIENE QUE IR PRIMERO
+    if (c == '\n' || c == '\r') return colSaltoLinea;
+
+    // ESTO VA DESPUÉS
     if (isspace(c))             return colEspacio;
 
     std::string s(1, c);
     auto it = charAColumna.find(s);
     if (it != charAColumna.end()) return it->second;
 
-    return 23; // Otros
+    // Si no es nada de lo anterior, devolvemos la columna configurada como OTROS
+    return colOtros;
 }
 
 TipoToken Lexer::obtenerTipoPorEstado(int estado) {
@@ -157,10 +165,11 @@ Token Lexer::siguienteToken() {
         int  col = obtenerColumna(c);
         int  sigEstado = matriz[estadoActual][col];
 
-        // Validamos dinamicamente si es un comentario
+        // Validamos dinámicamente si es un comentario
         TipoToken tipoSig = obtenerTipoPorEstado(sigEstado);
 
-        if (tipoSig == COMENTARIO_LINEA && estadoActual == 11) { // 11 es division
+        // Ya no necesitamos saber si venimos del estado 16, la matriz ya lo validó
+        if (tipoSig == COMENTARIO_LINEA) {
             pos++;
             while (pos < codigo.length() && codigo[pos] != '\n') pos++;
             std::string lexema = codigo.substr(posInicial, pos - posInicial);
@@ -168,7 +177,7 @@ Token Lexer::siguienteToken() {
             return { COMENTARIO_LINEA, lexema, startLinea, startCol };
         }
 
-        if (tipoSig == COMENTARIO_BLOQUE && estadoActual == 11) {
+        if (tipoSig == COMENTARIO_BLOQUE) {
             pos++;
             bool cerrado = false;
             while (pos < codigo.length()) {
@@ -243,5 +252,6 @@ std::vector<Token> Lexer::generarListaTokens() {
             lista.push_back(tokenActual);
         }
     } while (tokenActual.tipo != FIN);
+
     return lista;
 }
