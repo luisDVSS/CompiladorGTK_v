@@ -22,21 +22,30 @@ typedef struct {
   GtkWidget *OutputText;
   GtkWidget *ThemeColorBtn;
   GtkCssProvider *Provider;
+  GtkCssProvider *ProviderFont;
 } AppWidgets;
 
 int sizeFont = 16;
 // false = day true = night
 bool color_state = false;
 // clor de window y botones
-char cssWindowColorDay[400] =
-    "window { background-color: #EBEBEB; } "
-    "button { background-color: #D0D0D0 !important; } "
-    "button label { color: #121111 !important; }";
+char cssWindowColorNight[800] =
+    "window,  scrolledwindow, viewport { background-color: #2B2B2B; } "
+    "textview { background-color: #1E1E1E; color: #EBE7E6; } "
+    "textview text { background-color: #1E1E1E; color: #EBE7E6; } "
+    "button { background: #3C3C3C; background-image: none; "
+    "         border: none; border-radius: 4px; } "
+    "button:hover { background: #505050; background-image: none; } "
+    "button label { color: #EBE7E6; }";
+char cssWindowColorDay[800] =
+    "window,  scrolledwindow, viewport { background-color: #EBEBEB; } "
+    "textview { background-color: #FFFFFF; color: #000000; } "
+    "textview text { background-color: #FFFFFF; color: #000000; } "
+    "button { background: #EFEFEF; background-image: none; "
+    "         border: none; border-radius: 4px; } "
+    "button:hover { background: #E3D8D5; background-image: none; } "
+    "button label { color: #121111; }";
 
-char cssWindowColorNight[400] =
-    "window { background-color: #2B2B2B; } "
-    "button { background-color: #3C3C3C !important; } "
-    "button label { color: #EBE7E6 !important; }";
 char cssBuffer[200];
 vector<Token> listaTokens;
 vector<string> errores;
@@ -59,41 +68,41 @@ void parsear(GtkWidget *, gpointer data) {
 }
 void ZoomM(GtkWidget *widget, gpointer data) {
   AppWidgets *widgets = (AppWidgets *)data;
-  GtkCssProvider *provider = widgets->Provider;
+  GtkCssProvider *provider = widgets->ProviderFont;
   if (sizeFont < 30) {
     sizeFont = sizeFont + 1;
+
+    sprintf(cssBuffer,
+            ".text_output { font-family: 'Monospace'; font-size: %dpt; }"
+            ".text_entry {font-family : 'Monospace'; font-size: %dpt;}",
+            sizeFont, sizeFont);
+
+    gtk_css_provider_load_from_data(provider, cssBuffer, -1, NULL);
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                              GTK_STYLE_PROVIDER(provider),
+                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
   } else {
     cout << "Fuente demasiado grande" << endl;
   }
-  sprintf(cssBuffer,
-          "window { background-color: #EBEBEB; } "
-          ".text_output { font-family: 'Monospace'; font-size: %dpt; }"
-          ".text_entry {font-family : 'Monospace'; font-size: %dpt;}",
-          sizeFont, sizeFont);
-
-  gtk_css_provider_load_from_data(provider, cssBuffer, -1, NULL);
-  gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
-                                            GTK_STYLE_PROVIDER(provider),
-                                            GTK_STYLE_PROVIDER_PRIORITY_USER);
 }
 void ZoomL(GtkWidget *widget, gpointer data) {
   AppWidgets *widgets = (AppWidgets *)data;
-  GtkCssProvider *provider = widgets->Provider;
+  GtkCssProvider *provider = widgets->ProviderFont;
   if (sizeFont > 10) {
     sizeFont = sizeFont - 1;
+
+    sprintf(cssBuffer,
+            ".text_output { font-family: 'Monospace'; font-size: %dpt; }"
+            ".text_entry {font-family : 'Monospace'; font-size: %dpt;}",
+            sizeFont, sizeFont);
+
+    gtk_css_provider_load_from_data(provider, cssBuffer, -1, NULL);
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                              GTK_STYLE_PROVIDER(provider),
+                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
   } else {
     cout << "fuente demasiado pequeña" << endl;
   }
-  sprintf(cssBuffer,
-          "window { background-color: #EBEBEB; } "
-          ".text_output { font-family: 'Monospace'; font-size: %dpt; }"
-          ".text_entry {font-family : 'Monospace'; font-size: %dpt;}",
-          sizeFont, sizeFont);
-
-  gtk_css_provider_load_from_data(provider, cssBuffer, -1, NULL);
-  gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
-                                            GTK_STYLE_PROVIDER(provider),
-                                            GTK_STYLE_PROVIDER_PRIORITY_USER);
 }
 void imprimirArbol(Nodo *nodo, int nivel = 0) { ast_viewer_mostrar(arbol); }
 string LimpiarLexemaParaDisplay(const string &lexema) {
@@ -148,12 +157,12 @@ void changeColor(GtkWidget *widget, gpointer data) {
   // es niht
   if (color_state) {
     gtk_css_provider_load_from_data(provider, cssWindowColorNight, -1, NULL);
-    gtk_button_set_label(GTK_BUTTON(ThemeColorBtn), "NIGHT");
+    gtk_button_set_label(GTK_BUTTON(ThemeColorBtn), "Night");
   } else {
     // es day
     gtk_css_provider_load_from_data(provider, cssWindowColorDay, -1, NULL);
 
-    gtk_button_set_label(GTK_BUTTON(ThemeColorBtn), "DAY");
+    gtk_button_set_label(GTK_BUTTON(ThemeColorBtn), "Day");
   }
   gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
                                             GTK_STYLE_PROVIDER(provider),
@@ -273,19 +282,30 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_style_context_add_class(context_out, "text_output");
   gtk_style_context_add_class(context_entry, "text_entry");
   GtkCssProvider *provider = gtk_css_provider_new();
+  GtkCssProvider *providerFont = gtk_css_provider_new();
 
   AppWidgets *widgets = g_new(AppWidgets, 1);
   widgets->EntryCode = EntryCode;
   widgets->OutputText = OutputText;
   widgets->ThemeColorBtn = btnChangeColor;
   widgets->Provider = provider;
+  widgets->ProviderFont = providerFont;
+  // inicializacion del provider de font(fuente por defecto)
+  // para que no se note el cambio de fuente o de cosos
+  gtk_css_provider_load_from_data(
+      providerFont,
+      ".text_output { font-family: 'Monospace'; font-size: 16pt; }"
+      ".text_entry {font-family : 'Monospace'; font-size: 16pt;}",
+      -1, NULL);
+  gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                            GTK_STYLE_PROVIDER(providerFont),
+                                            GTK_STYLE_PROVIDER_PRIORITY_USER);
+  // seteo de tema day por defecto
+  gtk_css_provider_load_from_data(provider, cssWindowColorDay, -1, NULL);
+  gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                            GTK_STYLE_PROVIDER(provider),
+                                            GTK_STYLE_PROVIDER_PRIORITY_USER);
 
-  // GtkTextBuffer *codeBuffer =
-  // gtk_text_view_get_buffer(GTK_TEXT_VIEW(EntryCode),)
-  // gtk_entry_set_max_length(GTK_ENTRY(EntryCodigo),50);//max length pues
-  // xD poner dentro de la box: box el componente btnCompilar y el
-  // btnMostrarAST
-  //
   gtk_box_pack_start(GTK_BOX(box_btns), btnGenerarArbol, FALSE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(box_btns), btnMostrarAST, FALSE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(box_btns), btnCompilar, FALSE, TRUE, 0);
