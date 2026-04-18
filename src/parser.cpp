@@ -2,6 +2,7 @@
 #include "Tokens.h"
 // #include <cstdlib>
 #include <iostream>
+#include <iterator>
 using namespace std;
 // entrada = si(x==){}
 //  debugin
@@ -57,6 +58,7 @@ Nodo *Parser::parsearSentencia() {
     return parsearMientras();
     break;
   case KW_IMPRIMIR:
+    return parsearImprimir();
     break;
   case KW_SI:
     return parsearSi();
@@ -70,8 +72,9 @@ Nodo *Parser::parsearSentencia() {
   // case KW_CADENA_TIPO:
   // parsearCadenaTipo();
   default: // se ejecuta solo si al parsearla sentencia
-    cout << "debug 1" << endl;
-    errores.push_back("Error: Inicio de sentencia invalido en linea: " +
+
+    cout << "debug 1: " << Actual().tipo << "- " << Actual().lexema << endl;
+    errores.push_back("Error: Insasdicio de sentencia invalido en linea: " +
                       to_string(Actual().linea));
     // cout << "Token: " << Actual().lexema << endl;
     int lineaE = Actual().linea;
@@ -147,6 +150,7 @@ Nodo *Parser::parsearExpresion() {
 
   int lineaE = Actual().linea;
   Nodo *izq = nullptr;
+  // cout << "tipo: " << Actual().tipo << endl;
   if (Actual().tipo == ENTERO || Actual().tipo == DECIMAL ||
       Actual().tipo == ID || Actual().tipo == CADENA) {
 
@@ -390,4 +394,46 @@ Nodo *Parser::parsearMientras() {
   nextToken();
   Nodo *der = parsearBloque();
   return new Nodo("SENT_MIENTRAS", "", izq, der);
+}
+Nodo *Parser::parsearImprimir() {
+  // cout << "Entro con: " << Actual().tipo << endl;
+  // cin.get();
+  Nodo *N_print = new Nodo("IMPRIMIR", "");
+  if (Actual().tipo == KW_IMPRIMIR) {
+    nextToken();
+
+    // cout << "Entra al if: " << Actual().tipo << endl;
+
+    // cin.get();
+    if (Actual().tipo != PAREN_ABRE) {
+      errores.push_back("Error: se esperaba un '(' en linea: " +
+                        to_string(Actual().linea));
+      int lineaE = Actual().linea;
+      while (Actual().tipo != FIN && Actual().linea == lineaE) {
+        nextToken();
+      }
+      return nullptr;
+    }
+    nextToken();
+    N_print->izq = parsearExpresion();
+
+    if (Actual().tipo != PAREN_CIERRA) {
+      errores.push_back("Error: se esperaba un ')' en linea: " +
+                        to_string(Actual().linea));
+      int lineaE = Actual().linea;
+      while (Actual().tipo != FIN && Actual().linea == lineaE) {
+        nextToken();
+      }
+    } else {
+      nextToken();
+    }
+  } else {
+    int lineaE = Actual().linea;
+    while (Actual().tipo != FIN && Actual().linea == lineaE) {
+      nextToken();
+    }
+    return nullptr;
+  }
+  // cout << N_print->izq->tipo << endl;
+  return N_print;
 }

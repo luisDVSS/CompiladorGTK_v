@@ -13,13 +13,18 @@
 #include <string>
 #include <vector>
 // metodo estatico de activacion de la app
-//
+
 using namespace std;
+// variables globales
 int sizeFont = 16;
 char cssBuffer[200];
 vector<Token> listaTokens;
 vector<string> errores;
 Nodo *arbol = nullptr;
+// declaracion de buffers
+GtkTextBuffer *bufferCode;
+GtkTextBuffer *bufferOutput;
+
 void parsear(GtkWidget *, gpointer data) {
   vector<string> *errores = (vector<string> *)data;
   errores->clear();
@@ -30,17 +35,6 @@ void parsear(GtkWidget *, gpointer data) {
     for (string e : *errores) {
       cout << e << endl;
     }
-  }
-}
-void setLineBufferCode(string l) {}
-
-void ImportarCode() {
-  ifstream inputFile("code_ejemplo.txt");
-  if (!inputFile.is_open()) {
-    cout << "Error: no se pudo abrir el archivo" << endl;
-  }
-  string linea;
-  while (getline(inputFile, linea)) {
   }
 }
 void ZoomM(GtkWidget *widget, gpointer data) {
@@ -99,13 +93,40 @@ typedef struct {
   GtkWidget *EntryCode;
   GtkWidget *OutputText;
 } AppWidgets;
+
+void setBufferCodeBytxt(string buff_C) {
+  gtk_text_buffer_set_text(GTK_TEXT_BUFFER(bufferCode), buff_C.c_str(), -1);
+}
+// funcion de importar el codigo de un txt
+//// recive en data el widget de entrycode y outputtext
+
+void ImportarCode(GtkWidget *widget, gpointer data) {
+  // recivo la struct mandada(con input y output dentro)
+  AppWidgets *widgets = (AppWidgets *)data;
+  // uso entrycode de la estructura (referencia del
+  bufferCode = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->EntryCode));
+  // text widget entrycode)
+  ifstream inputFile("code_ejemplo.txt");
+  if (!inputFile.is_open()) {
+    cout << "Error: no se pudo abrir el archivo" << endl;
+    // cin.get();
+  }
+  string linea;
+  string bufferC;
+  bufferC.reserve(300);
+  while (getline(inputFile, linea)) {
+    cout << linea << endl;
+    bufferC.append(linea);
+    bufferC.append("\n");
+  }
+  setBufferCodeBytxt(bufferC);
+  cout << bufferC << endl;
+}
 void IDC_BTN_ANALIZAR(GtkWidget *btn, gpointer data) {
   AppWidgets *widgets = (AppWidgets *)data;
 
-  GtkTextBuffer *bufferOutput =
-      gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->OutputText));
-  GtkTextBuffer *bufferCode =
-      gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->EntryCode));
+  bufferOutput = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->OutputText));
+  bufferCode = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->EntryCode));
   gint len = gtk_text_buffer_get_char_count(bufferCode);
 
   if (len > 0) {
@@ -222,7 +243,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_box_pack_start(GTK_BOX(box_btns), btnMostrarAST, FALSE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(box_btns), btnCompilar, FALSE, TRUE, 0);
   gtk_box_pack_end(GTK_BOX(box_btns), btnZoomM, FALSE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(box), btnGetText, FALSE, TRUE, 0);
   gtk_box_pack_end(GTK_BOX(box_btns), btnZoomL, FALSE, TRUE, 0);
+
   // aqui se muestran todos los los cosos dentro de box (box ya se muestra como
   // box principal ya que es la unica que agrego a window)
   gtk_box_pack_start(GTK_BOX(box), box_btns, TRUE, FALSE, 0);
@@ -234,7 +257,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   // signals- lo que el boton o cosa que tenga accionador, va a hacer .D
   g_signal_connect(btnZoomL, "clicked", G_CALLBACK(ZoomL), provider);
   g_signal_connect(btnZoomM, "clicked", G_CALLBACK(ZoomM), provider);
-  g_signal_connect(btnImportar, "clicked", G_CALLBACK(ImportarCode), NULL);
+  g_signal_connect(btnGetText, "clicked", G_CALLBACK(ImportarCode), widgets);
   g_signal_connect(btnMostrarAST, "clicked", G_CALLBACK(imprimirArbol), NULL);
   g_signal_connect(btnGenerarArbol, "clicked", G_CALLBACK(parsear), &errores);
   g_signal_connect(btnCompilar, "clicked", G_CALLBACK(IDC_BTN_ANALIZAR),

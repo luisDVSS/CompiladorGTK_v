@@ -1,0 +1,8 @@
+mientras(x<1){
+si(x==1){
+  nombre = "1"
+  x=1
+}
+Imprimir("hola")
+}
+
