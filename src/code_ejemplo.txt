@@ -3,6 +3,6 @@ si(x==1){
   nombre = "1"
   x=1
 }
-Imprimir("hola")
+Imprimir(x+123)
 }
 

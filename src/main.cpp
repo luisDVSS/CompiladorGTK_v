@@ -16,7 +16,27 @@
 
 using namespace std;
 // variables globales
+
+typedef struct {
+  GtkWidget *EntryCode;
+  GtkWidget *OutputText;
+  GtkWidget *ThemeColorBtn;
+  GtkCssProvider *Provider;
+} AppWidgets;
+
 int sizeFont = 16;
+// false = day true = night
+bool color_state = false;
+// clor de window y botones
+char cssWindowColorDay[400] =
+    "window { background-color: #EBEBEB; } "
+    "button { background-color: #D0D0D0 !important; } "
+    "button label { color: #121111 !important; }";
+
+char cssWindowColorNight[400] =
+    "window { background-color: #2B2B2B; } "
+    "button { background-color: #3C3C3C !important; } "
+    "button label { color: #EBE7E6 !important; }";
 char cssBuffer[200];
 vector<Token> listaTokens;
 vector<string> errores;
@@ -38,7 +58,8 @@ void parsear(GtkWidget *, gpointer data) {
   }
 }
 void ZoomM(GtkWidget *widget, gpointer data) {
-  GtkCssProvider *provider = (GtkCssProvider *)data;
+  AppWidgets *widgets = (AppWidgets *)data;
+  GtkCssProvider *provider = widgets->Provider;
   if (sizeFont < 30) {
     sizeFont = sizeFont + 1;
   } else {
@@ -56,7 +77,8 @@ void ZoomM(GtkWidget *widget, gpointer data) {
                                             GTK_STYLE_PROVIDER_PRIORITY_USER);
 }
 void ZoomL(GtkWidget *widget, gpointer data) {
-  GtkCssProvider *provider = (GtkCssProvider *)data;
+  AppWidgets *widgets = (AppWidgets *)data;
+  GtkCssProvider *provider = widgets->Provider;
   if (sizeFont > 10) {
     sizeFont = sizeFont - 1;
   } else {
@@ -89,11 +111,6 @@ string LimpiarLexemaParaDisplay(const string &lexema) {
   }
   return resultado;
 }
-typedef struct {
-  GtkWidget *EntryCode;
-  GtkWidget *OutputText;
-} AppWidgets;
-
 void setBufferCodeBytxt(string buff_C) {
   gtk_text_buffer_set_text(GTK_TEXT_BUFFER(bufferCode), buff_C.c_str(), -1);
 }
@@ -121,6 +138,27 @@ void ImportarCode(GtkWidget *widget, gpointer data) {
   }
   setBufferCodeBytxt(bufferC);
   cout << bufferC << endl;
+}
+
+void changeColor(GtkWidget *widget, gpointer data) {
+  AppWidgets *widgets = (AppWidgets *)data;
+
+  GtkCssProvider *provider = widgets->Provider;
+  GtkWidget *ThemeColorBtn = widgets->ThemeColorBtn;
+  // es niht
+  if (color_state) {
+    gtk_css_provider_load_from_data(provider, cssWindowColorNight, -1, NULL);
+    gtk_button_set_label(GTK_BUTTON(ThemeColorBtn), "NIGHT");
+  } else {
+    // es day
+    gtk_css_provider_load_from_data(provider, cssWindowColorDay, -1, NULL);
+
+    gtk_button_set_label(GTK_BUTTON(ThemeColorBtn), "DAY");
+  }
+  gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                            GTK_STYLE_PROVIDER(provider),
+                                            GTK_STYLE_PROVIDER_PRIORITY_USER);
+  color_state = !color_state;
 }
 void IDC_BTN_ANALIZAR(GtkWidget *btn, gpointer data) {
   AppWidgets *widgets = (AppWidgets *)data;
@@ -185,6 +223,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   // layout
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
   GtkWidget *box_btns = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  GtkWidget *box_header_src = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
   GtkWidget *lblinput = gtk_label_new("Codigo fuente");
   GtkWidget *lbloutput = gtk_label_new("Salida del lexer");
   gtk_container_set_border_width(GTK_CONTAINER(box), 15);
@@ -200,6 +239,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *btnMostrarAST = gtk_button_new_with_label("Mostrar AST");
   GtkWidget *btnGenerarArbol = gtk_button_new_with_label("Generar Arbol");
   GtkWidget *btnGetText = gtk_button_new_with_label("Importar");
+  GtkWidget *btnChangeColor = gtk_button_new_with_label("Day");
   GtkWidget *scrollCode = gtk_scrolled_window_new(NULL, NULL);
 
   GtkWidget *scrollOutput = gtk_scrolled_window_new(NULL, NULL);
@@ -224,8 +264,12 @@ static void activate(GtkApplication *app, gpointer user_data) {
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(EntryCode), GTK_WRAP_WORD);
   gtk_container_add(GTK_CONTAINER(scrollCode), EntryCode);
   // obtener el contexto de los output y del entry
+
+  // GtkStyleContext *context_btn_theme =
+  //     gtk_widget_get_style_context(btnChangeColor);
   GtkStyleContext *context_out = gtk_widget_get_style_context(OutputText);
   GtkStyleContext *context_entry = gtk_widget_get_style_context(EntryCode);
+  // gtk_style_context_add_class(context_btn_theme, "btnTheme");
   gtk_style_context_add_class(context_out, "text_output");
   gtk_style_context_add_class(context_entry, "text_entry");
   GtkCssProvider *provider = gtk_css_provider_new();
@@ -233,35 +277,43 @@ static void activate(GtkApplication *app, gpointer user_data) {
   AppWidgets *widgets = g_new(AppWidgets, 1);
   widgets->EntryCode = EntryCode;
   widgets->OutputText = OutputText;
+  widgets->ThemeColorBtn = btnChangeColor;
+  widgets->Provider = provider;
 
   // GtkTextBuffer *codeBuffer =
   // gtk_text_view_get_buffer(GTK_TEXT_VIEW(EntryCode),)
-  // gtk_entry_set_max_length(GTK_ENTRY(EntryCodigo),50);//max length pues xD
-  // poner dentro de la box: box el componente btnCompilar y el btnMostrarAST
+  // gtk_entry_set_max_length(GTK_ENTRY(EntryCodigo),50);//max length pues
+  // xD poner dentro de la box: box el componente btnCompilar y el
+  // btnMostrarAST
   //
   gtk_box_pack_start(GTK_BOX(box_btns), btnGenerarArbol, FALSE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(box_btns), btnMostrarAST, FALSE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(box_btns), btnCompilar, FALSE, TRUE, 0);
+
+  gtk_box_pack_end(GTK_BOX(box_btns), btnChangeColor, FALSE, TRUE, 0);
   gtk_box_pack_end(GTK_BOX(box_btns), btnZoomM, FALSE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(box), btnGetText, FALSE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(box_header_src), btnGetText, FALSE, TRUE, 0);
   gtk_box_pack_end(GTK_BOX(box_btns), btnZoomL, FALSE, TRUE, 0);
 
   // aqui se muestran todos los los cosos dentro de box (box ya se muestra como
   // box principal ya que es la unica que agrego a window)
   gtk_box_pack_start(GTK_BOX(box), box_btns, TRUE, FALSE, 0);
-  gtk_box_pack_start(GTK_BOX(box), lblinput, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(box), box_header_src, FALSE, FALSE, 0);
+  gtk_box_pack_start(GTK_BOX(box_header_src), lblinput, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(box), scrollCode, TRUE, TRUE, 0);
 
   gtk_box_pack_start(GTK_BOX(box), lbloutput, FALSE, FALSE, 0);
   gtk_box_pack_start(GTK_BOX(box), scrollOutput, TRUE, TRUE, 0);
   // signals- lo que el boton o cosa que tenga accionador, va a hacer .D
-  g_signal_connect(btnZoomL, "clicked", G_CALLBACK(ZoomL), provider);
-  g_signal_connect(btnZoomM, "clicked", G_CALLBACK(ZoomM), provider);
+  g_signal_connect(btnZoomL, "clicked", G_CALLBACK(ZoomL), widgets);
+  g_signal_connect(btnZoomM, "clicked", G_CALLBACK(ZoomM), widgets);
+
   g_signal_connect(btnGetText, "clicked", G_CALLBACK(ImportarCode), widgets);
   g_signal_connect(btnMostrarAST, "clicked", G_CALLBACK(imprimirArbol), NULL);
   g_signal_connect(btnGenerarArbol, "clicked", G_CALLBACK(parsear), &errores);
   g_signal_connect(btnCompilar, "clicked", G_CALLBACK(IDC_BTN_ANALIZAR),
                    widgets);
+  g_signal_connect(btnChangeColor, "clicked", G_CALLBACK(changeColor), widgets);
   // inicializacion de window
   gtk_widget_show_all(window);
 }
