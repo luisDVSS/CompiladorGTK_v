@@ -34,6 +34,7 @@ public:
 
 private:
   Nodo *parsearImprimir();
+  Nodo *parsearDeclaracion();
   Nodo *parsearSi();
   Nodo *parsearMientras();
   Nodo *parsearCondicion();
@@ -44,6 +45,8 @@ private:
   Nodo *parsearExpresion();
   Token Actual();
   Token nextToken();
+  // fos = flag only show
+  Token nextToken(bool fos);
 
   vector<Token> tokens;
   int posicion = 0;

@@ -4,18 +4,8 @@
 #include <iostream>
 // #include <iterator>
 using namespace std;
-// entrada = si(x==){}
-//  debugin
-//   salida: )
-//   Entrada :)
-//   debug 1
-//   Token: }
-//   Error: valor invalido en linea: 1
-//   Error: se esperaba un ')' en linea: 23
-//   Error: Inicio de sentencia invalido en linea: 2
-//   si ( x > 0 ) { Imprimir("positivo") }
 Parser::Parser(vector<Token> t) : tokens(t), posicion(0) {}
-
+// retorna el token en posicion
 Token Parser::Actual() {
   if (posicion >= tokens.size()) {
     return tokens.back(); // regresa el último token (FIN)
@@ -24,22 +14,34 @@ Token Parser::Actual() {
 }
 
 Token Parser::nextToken() {
+  // funcion que muestra el actual y avanza 1
   if (posicion >= tokens.size()) {
     return tokens.back(); // regresa el último token (FIN)
   }
   return tokens[posicion++]; // retorna token y despues de retornarlo suma 1
 }
+// fos = bandera de solo muestra ()
+// sobrecarga con bandera
+Token Parser::nextToken(bool fos) {
+  // funcion que solo muestra el siguiente, no avanza
+  if (posicion >= tokens.size()) {
+    return tokens.back(); // regresa el último token (FIN)
+  }
+  return tokens[posicion + 1]; // retorna token en posicion +1 (no avanza)
+}
 
 Nodo *Parser::parsearPrograma() {
   Nodo *raiz = new Nodo("PROGRAMA", "");
-
+  int i = 0;
   while (Actual().tipo != FIN) {
+    i = i + 1;
     Nodo *sentencia = parsearSentencia();
+    // cout << "Llamada: " << i << endl;
+    // se supone que tiene que haber una llamada
     if (sentencia != nullptr) {
       raiz->hijos.push_back(sentencia);
     }
   }
-
   return raiz;
 }
 
@@ -51,7 +53,6 @@ Nodo *Parser::parsearSentencia() {
   case LLAVE_ABRE:
     return parsearBloque();
     break;
-
   case KW_CLASE:
     break;
   case KW_MIENTRAS:
@@ -63,18 +64,29 @@ Nodo *Parser::parsearSentencia() {
   case KW_SI:
     return parsearSi();
     break;
-  case KW_CASO:
+  case KW_BOOL:
+    parsearDeclaracion();
     break;
   case KW_ENTERO:
+    return parsearDeclaracion();
+    break;
+  case KW_CADENA_TIPO:
+    return parsearDeclaracion();
+    break;
+  case KW_CARACTER:
+    return parsearDeclaracion();
     break;
   case KW_DOBLE:
+    return parsearDeclaracion();
+
     break;
+
   // case KW_CADENA_TIPO:
   // parsearCadenaTipo();
   default: // se ejecuta solo si al parsearla sentencia
 
-    cout << "debug 1: " << Actual().tipo << "- " << Actual().lexema << endl;
-    errores.push_back("Error: Insasdicio de sentencia invalido en linea: " +
+    cout << "debug 1: " << Actual().tipo << " -> " << Actual().lexema << endl;
+    errores.push_back("Error: DEB:Inicio de sentencia invalido en linea: " +
                       to_string(Actual().linea));
     // cout << "Token: " << Actual().lexema << endl;
     int lineaE = Actual().linea;
@@ -90,13 +102,7 @@ Nodo *Parser::parsearSentencia() {
 }
 
 Nodo *Parser::parsearAsignacion() {
-  // cout<<"tipo debug"<<Actual().tipo<<endl;
-  // if(Actual().tipo == ENTERO || Actual().tipo == DECIMAL){
-  //   cout<<"error: sintaxis invalida no se permite una constante como inicio
-  //   de sentencia"<<endl; return nullptr;
-  // }
   Token id = nextToken();
-  // x==1){}
   if (Actual().tipo != ASIGNACION) {
     errores.push_back("Error: valor invalido o se esperaba '=' en linea " +
                       to_string(Actual().linea));
@@ -108,27 +114,37 @@ Nodo *Parser::parsearAsignacion() {
     return nullptr;
   }
   nextToken();
-  //->2
+
+  Nodo *temp = nullptr;
+  switch (Actual().tipo) {
+  case KW_LEER:
+    nextToken();
+    return new Nodo("ASIGNACION", "=", new Nodo("ID", id.lexema),
+                    new Nodo("Lectura", "Input"));
+    break;
+  case KW_VERDADERO:
+    nextToken();
+    return new Nodo("ASIGNACION", "=", new Nodo("ID", id.lexema),
+                    new Nodo("BOOl", "VERDADERO"));
+    break;
+  case KW_FALSO:
+    nextToken();
+    return new Nodo("ASIGNACION", "=", new Nodo("ID", id.lexema),
+                    new Nodo("BOOl", "FALSO"));
+    break;
+  }
+
   if (Actual().tipo == DECIMAL || Actual().tipo == ENTERO ||
       Actual().tipo == ID || Actual().tipo == CADENA) {
     Nodo *der = nullptr;
-    // puntero llamado der sin apuntar a ningun lado
-    //  cout<<"lexema: "<<Actual().tipo<<endl;
     if (Actual().tipo == CADENA) {
       Nodo *temp = new Nodo("CADENA", Actual().lexema);
-      // cout<<"Es cadena"<<endl;
       nextToken();
-      // cout<<"lexema error loop: "<<Actual().lexema<<endl;
-      // cin.get();
-      // x=1asd
-      // 1 - asd(ID)
       der = temp;
     } else {
       der = parsearExpresion();
       // x=a+1
     }
-    // crea un puntero llamdo expresion
-    //--->0x91283 = retorna = nodo
     return new Nodo("ASIGNACION", "=", new Nodo("ID", id.lexema), der);
   } else {
     errores.push_back(
@@ -142,10 +158,8 @@ Nodo *Parser::parsearAsignacion() {
     return nullptr;
   }
 }
-
 Nodo *Parser::parsearExpresion() {
   // entra con ')'
-  // cout << "Entrada :" << Actual().lexema << endl;
   // aqui entra una cadena =="cadena"
 
   int lineaE = Actual().linea;
@@ -270,6 +284,7 @@ Nodo *Parser::parsearCondicion() {
 Nodo *Parser::parsearBloque() {
   // validar si se inicia en con }
   // solo coherente dentro de un if o algo asi xd
+  //{}
   if (Actual().tipo != LLAVE_ABRE) {
     errores.push_back("Error: se esperaba un '{' en linea: " +
                       to_string(Actual().linea));
@@ -285,7 +300,8 @@ Nodo *Parser::parsearBloque() {
   //   }
   //   return nullptr;
   // }
-  // recorrer las sentencias posteriores y anexarlas a un nodo llamado BLOQUE
+  // recorrer las sentencias posteriores y anexarlas a un nodo llamado
+  // BLOQUE
   Nodo *bloque = new Nodo("BLOQUE", "{}");
   while (Actual().tipo != LLAVE_CIERRA && Actual().tipo != FIN) {
     Nodo *s = parsearSentencia();
@@ -306,8 +322,7 @@ Nodo *Parser::parsearBloque() {
 }
 // parseo de si
 Nodo *Parser::parsearSi() {
-  // si(){
-  // }
+  // si(){}
   Nodo *si_parsed = new Nodo("SENTENCIA_SI", "<>");
   // Nodo* default_else= nulltptr
   // Nodo* sent_condicion = new Nodo("SENT_CONDICION","");
@@ -436,4 +451,64 @@ Nodo *Parser::parsearImprimir() {
   }
   // cout << N_print->izq->tipo << endl;
   return N_print;
+}
+Nodo *Parser::parsearDeclaracion() {
+  Nodo *declaracion = new Nodo("DECLARACION", "");
+  string tipoDato = "";
+  // vallidar si es un tipo de dato como entrada de funcion (quiza
+  // redundante) ejemplo caden nombre = "juan" ejemplo caden nombre
+  // ->>declaracion sin inicializacion
+  if (Actual().tipo == KW_CADENA_TIPO || Actual().tipo == KW_ENTERO ||
+      Actual().tipo == KW_DOBLE || Actual().tipo == KW_CARACTER ||
+      Actual().tipo == KW_BOOL) {
+    switch (Actual().tipo) {
+    case KW_CADENA_TIPO:
+      tipoDato = "CADENA";
+      break;
+    case KW_ENTERO:
+      tipoDato = "ENTERO";
+      break;
+    case KW_DOBLE:
+      tipoDato = "DOBLE";
+      break;
+    case KW_CARACTER:
+      tipoDato = "CARACTER";
+      break;
+    case KW_BOOL:
+      tipoDato = "BOOLEANO";
+      break;
+    default:
+      tipoDato = "UNDENIFIED"; // ni va entrar auqi, creo xD
+    }
+
+    nextToken();
+    // estado : ID (nombre de la variable)
+
+    if (Actual().tipo != ID) {
+      errores.push_back("Error: simbolo faltante en la asignacion en linea: " +
+                        to_string(Actual().linea));
+
+      int lineaE = Actual().linea;
+      while (Actual().tipo != FIN && Actual().linea == lineaE) {
+        nextToken();
+      }
+      return nullptr;
+    }
+    string lex_id = Actual().lexema;
+    // estado :
+    if (nextToken(0).tipo == ASIGNACION) {
+      declaracion->izq = new Nodo(tipoDato, "");
+      // estado madnado : nombre
+      // de
+      // cadena nombre = "juan"
+      declaracion->der = parsearAsignacion();
+    } else {
+      declaracion->izq = new Nodo(tipoDato, "");
+      declaracion->der = new Nodo("ID", lex_id);
+      nextToken();
+      // devolio declracion
+      return declaracion;
+    }
+  }
+  return declaracion;
 }

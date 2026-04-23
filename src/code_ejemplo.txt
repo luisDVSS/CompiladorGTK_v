@@ -1,8 +1,20 @@
-mientras(x<1){
-si(x==1){
-  nombre = "1"
-  x=1
+cadena nombre
+entero edad
+nombre = "luis"
+edad = 21
+seguir = verdadero
+mientras(seguir != false){
+  si(edad>18){
+    Imprimir("Eres mayor de edad")
+  }de_lo_contrario{
+    Imprimir("Eres menor de edad")
+  }
+Imprimir("Deseas continuar? (s/n)")
+cadena dec = Leer
+si(dec == "s"){
+seguir = verdadero
+}de_lo_contrario{
+seguir = falso
 }
-Imprimir(x+123)
 }
 
