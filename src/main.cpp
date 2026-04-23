@@ -31,6 +31,7 @@ bool color_state = false;
 // clor de window y botones
 char cssWindowColorNight[800] =
     "window,  scrolledwindow, viewport { background-color: #2B2B2B; } "
+    "label {color: #EDDDDA;}"
     "textview { background-color: #1E1E1E; color: #EBE7E6; } "
     "textview text { background-color: #1E1E1E; color: #EBE7E6; } "
     "button { background: #3C3C3C; background-image: none; "
@@ -39,6 +40,7 @@ char cssWindowColorNight[800] =
     "button label { color: #EBE7E6; }";
 char cssWindowColorDay[800] =
     "window,  scrolledwindow, viewport { background-color: #EBEBEB; } "
+    "label {color: #2E2B2B;}"
     "textview { background-color: #FFFFFF; color: #000000; } "
     "textview text { background-color: #FFFFFF; color: #000000; } "
     "button { background: #EFEFEF; background-image: none; "
