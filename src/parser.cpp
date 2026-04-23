@@ -102,8 +102,9 @@ Nodo *Parser::parsearSentencia() {
 }
 
 Nodo *Parser::parsearAsignacion() {
-  Token id = nextToken();
-  if (Actual().tipo != ASIGNACION) {
+  // nombre =
+  Token id = nextToken(0); // 2
+  if (nextToken(0).tipo != ASIGNACION) {
     errores.push_back("Error: valor invalido o se esperaba '=' en linea " +
                       to_string(Actual().linea));
     int lineaE = Actual().linea;
@@ -114,7 +115,18 @@ Nodo *Parser::parsearAsignacion() {
     return nullptr;
   }
   nextToken();
-
+  // si cambio de linea y no termino
+  if (nextToken(0).linea != Actual().linea) {
+    errores.push_back("Error: valor invalido despues de la asignacion linea: " +
+                      to_string(Actual().linea));
+    int lineaE = Actual().linea;
+    while (Actual().linea == lineaE && Actual().tipo != LLAVE_ABRE &&
+           Actual().tipo != FIN) {
+      nextToken();
+    }
+    return nullptr;
+  }
+  nextToken();
   Nodo *temp = nullptr;
   switch (Actual().tipo) {
   case KW_LEER:
@@ -480,13 +492,13 @@ Nodo *Parser::parsearDeclaracion() {
     default:
       tipoDato = "UNDENIFIED"; // ni va entrar auqi, creo xD
     }
-
+    int lineaE = Actual().linea;
     nextToken();
     // estado : ID (nombre de la variable)
 
     if (Actual().tipo != ID) {
       errores.push_back("Error: simbolo faltante en la asignacion en linea: " +
-                        to_string(Actual().linea));
+                        to_string(lineaE));
 
       int lineaE = Actual().linea;
       while (Actual().tipo != FIN && Actual().linea == lineaE) {
@@ -502,6 +514,7 @@ Nodo *Parser::parsearDeclaracion() {
       // de
       // cadena nombre = "juan"
       declaracion->der = parsearAsignacion();
+
     } else {
       declaracion->izq = new Nodo(tipoDato, "");
       declaracion->der = new Nodo("ID", lex_id);

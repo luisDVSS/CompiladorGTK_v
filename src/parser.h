@@ -6,7 +6,9 @@
 // creacion de la estructura de parsers
 // cambio
 using namespace std;
-// structura nodo del ast
+// aqui se declara
+//  structura nodo del ast
+//
 struct Nodo {
   string tipo;
   string valor;
@@ -45,7 +47,7 @@ private:
   Nodo *parsearExpresion();
   Token Actual();
   Token nextToken();
-  // fos = flag only show
+  // fos = flag only show- sobrecarga
   Token nextToken(bool fos);
 
   vector<Token> tokens;
