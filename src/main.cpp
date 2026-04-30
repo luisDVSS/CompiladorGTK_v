@@ -235,8 +235,13 @@ static void activate(GtkApplication *app, gpointer user_data) {
   GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
   GtkWidget *box_btns = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
   GtkWidget *box_header_src = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+  // for (int i;0 < 3; i++) {
+  //   for (int j = 0; j < 3; j++) {
+  //   }
+  // }
   GtkWidget *lblinput = gtk_label_new("Codigo fuente");
   GtkWidget *lbloutput = gtk_label_new("Salida del lexer");
+
   gtk_container_set_border_width(GTK_CONTAINER(box), 15);
   // añado a la ventana las dos boxes
   gtk_container_add(GTK_CONTAINER(window), box);

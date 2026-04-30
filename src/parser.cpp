@@ -2,6 +2,7 @@
 #include "Tokens.h"
 // #include <cstdlib>
 #include <iostream>
+#include <iterator>
 // #include <iterator>
 using namespace std;
 Parser::Parser(vector<Token> t) : tokens(t), posicion(0) {}
@@ -29,12 +30,10 @@ Token Parser::nextToken(bool fos) {
   }
   return tokens[posicion + 1]; // retorna token en posicion +1 (no avanza)
 }
-
+// inicio
 Nodo *Parser::parsearPrograma() {
-  Nodo *raiz = new Nodo("PROGRAMA", "");
-  int i = 0;
+  Nodo *raiz = new Nodo("PROGRAMA", ""); // nodo : raiz "PROGRAMA"
   while (Actual().tipo != FIN) {
-    i = i + 1;
     Nodo *sentencia = parsearSentencia();
     // cout << "Llamada: " << i << endl;
     // se supone que tiene que haber una llamada
@@ -44,7 +43,7 @@ Nodo *Parser::parsearPrograma() {
   }
   return raiz;
 }
-
+// required: que entre en inicio de una sentencia
 Nodo *Parser::parsearSentencia() {
   switch (Actual().tipo) {
   case ID:
@@ -78,13 +77,12 @@ Nodo *Parser::parsearSentencia() {
     break;
   case KW_DOBLE:
     return parsearDeclaracion();
-
     break;
-
   // case KW_CADENA_TIPO:
   // parsearCadenaTipo();
   default: // se ejecuta solo si al parsearla sentencia
-
+           // entra cuando el puntero queda intermedio en un token o en un token
+           // que no es inicio de sentencia
     cout << "debug 1: " << Actual().tipo << " -> " << Actual().lexema << endl;
     errores.push_back("Error: DEB:Inicio de sentencia invalido en linea: " +
                       to_string(Actual().linea));
@@ -95,16 +93,16 @@ Nodo *Parser::parsearSentencia() {
     while (Actual().tipo != FIN && Actual().linea == lineaE) {
       nextToken();
     }
-
     return nullptr;
   }
   return nullptr;
 }
-
+// sentencias tipo
+// x= expresion
 Nodo *Parser::parsearAsignacion() {
-  // nombre =
-  Token id = nextToken(0); // 2
-  if (nextToken(0).tipo != ASIGNACION) {
+  Token id = nextToken(); // x, avanza 1
+                          // = , avanza a 1
+  if (Actual().tipo != ASIGNACION) {
     errores.push_back("Error: valor invalido o se esperaba '=' en linea " +
                       to_string(Actual().linea));
     int lineaE = Actual().linea;
@@ -114,9 +112,14 @@ Nodo *Parser::parsearAsignacion() {
     }
     return nullptr;
   }
-  nextToken();
+  // igual
+  // nextToken();
+  // cout << "linea salida" << Actual().linea << Actual().lexema << endl;
   // si cambio de linea y no termino
   if (nextToken(0).linea != Actual().linea) {
+    cout << "linea entrada" << Actual().linea << endl;
+
+    cout << "token : " << Actual().lexema << endl;
     errores.push_back("Error: valor invalido despues de la asignacion linea: " +
                       to_string(Actual().linea));
     int lineaE = Actual().linea;
@@ -155,7 +158,6 @@ Nodo *Parser::parsearAsignacion() {
       der = temp;
     } else {
       der = parsearExpresion();
-      // x=a+1
     }
     return new Nodo("ASIGNACION", "=", new Nodo("ID", id.lexema), der);
   } else {
@@ -492,8 +494,19 @@ Nodo *Parser::parsearDeclaracion() {
     default:
       tipoDato = "UNDENIFIED"; // ni va entrar auqi, creo xD
     }
+    // entero ---
     int lineaE = Actual().linea;
     nextToken();
+    if (lineaE != Actual().linea) {
+      errores.push_back("Error: simbolo faltante en la asignacion en linea: " +
+                        to_string(lineaE));
+
+      int lineaE = Actual().linea;
+      while (Actual().tipo != FIN && Actual().linea == lineaE) {
+        nextToken();
+      }
+      return nullptr;
+    }
     // estado : ID (nombre de la variable)
 
     if (Actual().tipo != ID) {
